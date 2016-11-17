@@ -4,12 +4,12 @@ clc
 
 fclose(instrfind)
 %настройки COM порта
-Num_com_port='COM4';
+Num_com_port='COM67';
 baud=115200;
 com_port=serial(Num_com_port, 'BaudRate', baud);
 
 %что обрабатывать
-phData.NumPointPlot=50; % максимальное число точек на графике
+phData.NumPointPlot=30; % максимальное число точек на графике
 phData.NumPointPoiskKA=5;    % число точек для поиска нужного КА
 phData.chisl_spytnicov=96;%  число спутников 
 
@@ -35,7 +35,7 @@ Bin.data_write(1:8,1)=[hex2dec('4F'); 0; 1; 0; 0; 0; 9; 0];
 GEOS_3R_BIN_DataWrite(Bin.data_write, com_port);
 
 % темп выдачи (1 Гц)
-Bin.data_write(1:8,1)=[hex2dec('44'); 0; 1; 0; 3; 0; 0; 0];
+Bin.data_write(1:8,1)=[hex2dec('44'); 0; 1; 0; 2; 0; 0; 0];
 GEOS_3R_BIN_DataWrite(Bin.data_write, com_port);
 
 StartTime=-1; % время начала работы
@@ -70,7 +70,7 @@ while(1==1) % определяем номер КА
        fprintf('\n not \n max signalTOnoise= %f \n', logik/phData.NumPointPoiskKA)
    end
 end
-fclose(com_port);
+%fclose(com_port);
 %закончили поиск
 phData.SignalToNoise=nan;
 phData.SignalToNoise(1:phData.NumPointPlot,1)=nan;
@@ -79,7 +79,7 @@ phData.SignalToNoise(1:phData.NumPointPlot,1)=nan;
 %phData.o= 4.208831474092468e-004;
 %1.603687500000000e+009;
 
-fopen(com_port);
+%fopen(com_port);
 while(1==1) % обработка данных с заданного КА
 %    fclose(com_port);
 %    clc
