@@ -1,21 +1,9 @@
 clear
 clc
 
-%fclose(instrfind)
+fclose(instrfind)
 
-fead_data_from='GEOS';
-fead_data_from='file';
-
-if(fead_data_from=='GEOS')
-    %настройки COM порта
-    Num_com_port='COM67';
-    baud=115200;
-    com_port=serial(Num_com_port, 'BaudRate', baud);
-else
-    name_bin_file='/GEOS_3MR.bin';
-    com_port=fopen(name_bin_file);
-end
-
+com_port=fopen('GEOS_3MR.bin');
 
 %что обрабатывать
 phData.NumPointPlot=30; % максимальное число точек на графике
@@ -35,23 +23,8 @@ phData.time(1:phData.NumPointPlot,1)=nan;
 phData.H_liter=nan;
 phData.cycle_d(1:phData.NumPointPlot,1)=nan;
 t_gps(1:phData.NumPointPlot,1)=nan;
-% Bin.preamble=[hex2dec('47'); hex2dec('45'); hex2dec('4f'); hex2dec('53'); ...
-%     hex2dec('72'); hex2dec('33'); hex2dec('50'); hex2dec('53')]; %преамбула GEOSr3PS
 
-if(fead_data_from=='GEOS') %для прм GEOS-3R
-    %настройки бинарного протокола приемника
-    % выдача сообщений 0х10 и 0x13
-    Bin.data_write(1:8,1)=[hex2dec('4F'); 0; 1; 0; 0; 0; 9; 0];
-    GEOS_3R_BIN_DataWrite(Bin.data_write, com_port);
-    
-    % темп выдачи (1 Гц)
-    Bin.data_write(1:8,1)=[hex2dec('44'); 0; 1; 0; 2; 0; 0; 0];
-    GEOS_3R_BIN_DataWrite(Bin.data_write, com_port);
-    
-    fopen(com_port);
-end
-
-StartTime=-1; % время начала работы
+StartTime=-1;
 
 while(1==1) % определяем номер КА
     for(cikl_for=1:phData.NumPointPoiskKA)
@@ -91,12 +64,7 @@ phData.SignalToNoise(1:phData.NumPointPlot,1)=nan;
 %phData.o= 4.208831474092468e-004;
 %1.603687500000000e+009;
 
-if(fead_data_from=='GEOS')
-    fopen(com_port);
-else
-    com_port=fopen(name_bin_file);
-end
-
+com_port=fopen('GEOS_3MR.bin');
 while(1==1) % обработка данных с заданного КА
 %    fclose(com_port);
 %    clc
@@ -194,11 +162,3 @@ while(1==1) % обработка данных с заданного КА
         drawnow
 %    end
 end
-    
-        
-        
-        
-       
-    
-
-
