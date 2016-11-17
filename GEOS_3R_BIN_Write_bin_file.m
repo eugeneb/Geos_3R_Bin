@@ -2,7 +2,7 @@ clear
 clc
 fclose(instrfind);
 
-file_name='geos_3MR_F_1_Hz.bin';
+file_name='bin_data_file\geos_3MR_F_1_Hz.bin';
 Num_com_port='COM67';
 baud=115200;
 com_port=serial(Num_com_port, 'BaudRate', baud);

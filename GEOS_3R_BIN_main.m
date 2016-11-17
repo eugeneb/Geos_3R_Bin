@@ -12,7 +12,7 @@ if(fead_data_from=='GEOS')
     baud=115200;
     com_port=serial(Num_com_port, 'BaudRate', baud);
 else
-    name_bin_file='/geos_3MR_F_1_Hz.bin';
+    name_bin_file='bin_data_file\geos_3MR_F_1_Hz.bin';
     com_port=fopen(name_bin_file);
 end
 
@@ -129,19 +129,13 @@ while(1==1) % обработка данных с заданного КА
                 else
                     F_signal=F0_gln+phData.H_liter*dF_gln;
                 end
-%            else
-%                phData.phase(1,1)=phData.phase(1,1)+...
-%                    abs(phData.cycle_d(1,1)-phData.cycle_d(2,1))*...
-%                    0.5*F_signal*(16369002.5-phData.cycle_d(1,1)-phData.cycle_d(2,1))/16369002.5;%-
-%             phData.phase(1,1)=phData.phase(1,1)-F_signal/16369000*(phData.cycle_d(1,1)-16369002)*...
-%                 (phData.phase(1,1)-phData.phase(2,1))/abs(phData.phase(1,1)-phData.phase(2,1));
             end
            phData.time(1,1)=(phData.UTC-StartTime); %по НС определяем
-            %phData.time(1,1)=phData.time(1,1)+1+(phData.cycle_d(1,1)-16369000)/16369000;
-            %phData.time(1,1)=(phData.UTC-StartTime)+1000000*(16369002.5-phData.cycle_d(1,1))/16369000;
-           % phData.time(1,1)=phData.time(1,1)+1-(16369002.5-phData.cycle_d(1,1))/16369002.5;
-           %phData.phase(1,1)=phData.phase(1,1)+0.5*F_signal*(16369002.5-phData.cycle_d(1,1))/16369002.5;
-           %phData.time(1,1)=(phData.phase(1,1)-phData.b)/phData.k;
+%            MEAN = mean(phData.cycle_d);
+%            ind = find(abs(phData.cycle_d-MEAN)<0.5);
+%            phData.mean_Fd=mean(phData.cycle_d(ind));
+%            phData.TIME= phData.time+(phData.cycle_d(1,1)-phData.mean_Fd)/phData.mean_Fd;
+           
            fprintf('\n UTC (01.01.2008): %9.0f sec', phData.UTC);
             fprintf('\n number KA: %d', phData.kol_vo_KA);
             t_gps(1,1)=GEOS_3R_BIN_navi_task_0x13(Bin.navi_task);%0x13
@@ -149,7 +143,7 @@ while(1==1) % обработка данных с заданного КА
         end
 
         %обработка данных:
-        if(sum(~isnan(phData.phase))>2)
+        if(sum(~isnan(phData.phase))>3)
             k=find(isnan(phData.phase)==0);
             apr.phase=phData.phase(k);
             apr.time=phData.time(k);
