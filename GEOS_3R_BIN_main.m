@@ -12,7 +12,7 @@ if(fead_data_from=='GEOS')
     baud=115200;
     com_port=serial(Num_com_port, 'BaudRate', baud);
 else
-    name_bin_file='/GEOS_3MR.bin';
+    name_bin_file='/geos_3MR_F_1_Hz.bin';
     com_port=fopen(name_bin_file);
 end
 
@@ -45,7 +45,7 @@ if(fead_data_from=='GEOS') %для прм GEOS-3R
     GEOS_3R_BIN_DataWrite(Bin.data_write, com_port);
     
     % темп выдачи (1 Гц)
-    Bin.data_write(1:8,1)=[hex2dec('44'); 0; 1; 0; 2; 0; 0; 0];
+    Bin.data_write(1:8,1)=[hex2dec('44'); 0; 1; 0; 3; 0; 0; 0];
     GEOS_3R_BIN_DataWrite(Bin.data_write, com_port);
     
     fopen(com_port);
