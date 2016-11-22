@@ -1,33 +1,69 @@
-function [ data, datN ] = GEOS_3R_BIN_DataRead( ncmd, com_port)
+function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
+% function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
+% 
+% Данная функция читает из входного потока пакет с требуемого типа
+% Входные параметры:
+%   ncmd    - тип требуемого пакета
+%   stream  - входной поток данных (файл или порт)
+% Выходные параметры:
+%   data    - содержимое пакета (байты)
+%   datN    - количество прочитанных данных
+    
+    
 %считывает из указаного порта сообщение номер ncmd
 % осуществляется проверка cs. На выходе: 
 %data  - только информационные слова (БЕЗ преамбулы, datN,ncmd, cs)
 %datN- колличество слов в сообщение (в это количество НЕ входят 
 %преамбула, datN,ncmd, cs, Учитывается ТОЛЬКО data)
-preamble_and_ncmd(1:8,1)=[hex2dec('47'); hex2dec('45'); hex2dec('4f'); hex2dec('53'); ...
-    hex2dec('72'); hex2dec('33'); hex2dec('50'); hex2dec('53')]; %преамбула GEOS-3R
-ncmd=str2num(dec2bin(ncmd)); %добавляем к преамбуле номер сообщения (ncmd)
-preamble_and_ncmd(9:10,1)=0;%!!! preamble_and_ncmd(10,1)==0 согласно протоколу
-for(k=1:8)
-    preamble_and_ncmd(9,1)=preamble_and_ncmd(9,1)+fix(mod(ncmd,10^k)/10^(k-1))*2^(k-1);
-end
-while(1==1)% читаем из порта, пока не найдем нужное сообщение
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(1,1))%побайтово
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(2,1))%ищем начало
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(3,1))%нужного 
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(4,1))%сообщения
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(5,1))
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(6,1))
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(7,1))
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(8,1))
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(9,1))
-    if(fread(com_port,1,'uint8')==preamble_and_ncmd(10,1))
-        datN=fread(com_port,1,'uint8');%число слов в сообщении
-        datN=datN+fread(com_port,1,'uint8')*(2^8);
-        for(k=1:datN)%информационые слова сообщения
-            data(4*(k-1)+1:4*k,1)=fread(com_port,4,'uint8');
+% preamble_and_ncmd(1:8,1)=[hex2dec('47'); hex2dec('45'); hex2dec('4f'); hex2dec('53'); ...
+%     hex2dec('72'); hex2dec('33'); hex2dec('50'); hex2dec('53')]; %преамбула GEOS-3R
+% ncmd=str2num(dec2bin(ncmd)); %добавляем к преамбуле номер сообщения (ncmd)
+% preamble_and_ncmd(9:10,1)=0;%!!! preamble_and_ncmd(10,1)==0 согласно протоколу
+% for(k=1:8)
+%     preamble_and_ncmd(9,1)=preamble_and_ncmd(9,1)+fix(mod(ncmd,10^k)/10^(k-1))*2^(k-1);
+% end
+
+% Если ничего не будет выделено, можно просто выйти из функции со значениями по-умолчанию
+    data = [];
+    datN = 0;
+    
+    preamble = ['GEOSr3PS' dec2hex(ncmd, 2)];
+    if (~feof(stream))
+        buf = fread(stream, length(preamble), 'uint8')';
+    else
+        return;
+    end
+
+    % Ждём появления пакета
+    while (strcmp(buf, preamble) ~= 1)
+        if (~feof(stream))
+            buf = [buf(2:end) fread(stream, 1, 'uint8')' ];
+            fprintf('%s\n', buf);
+        else
+            return;
         end
-        ControlSum(1:4,1)=fread(com_port,4,'uint8');%контрольная сумма
+    end
+    printf('Preamble is found\n');
+    
+    return
+while(1==1)% читаем из порта, пока не найдем нужное сообщение
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(1,1))%побайтово
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(2,1))%ищем начало
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(3,1))%нужного 
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(4,1))%сообщения
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(5,1))
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(6,1))
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(7,1))
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(8,1))
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(9,1))
+    if(fread(stream,1,'uint8')==preamble_and_ncmd(10,1))
+        
+        datN=fread(stream,1,'uint8');%число слов в сообщении
+        datN=datN+fread(stream,1,'uint8')*(2^8);
+        for(k=1:datN)%информационые слова сообщения
+            data(4*(k-1)+1:4*k,1)=fread(stream,4,'uint8');
+        end
+        ControlSum(1:4,1)=fread(stream,4,'uint8');%контрольная сумма
         %обработка. проверяем cs
         ControlSum(1:4,1)=str2num(dec2bin(ControlSum(1:4,1)));
         for(k=1:4) %сонтрольную сумму по битам раскладываем
