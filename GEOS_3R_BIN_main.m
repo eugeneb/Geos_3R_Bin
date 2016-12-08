@@ -169,16 +169,31 @@ while (1) % обработка данных с заданного КА
         apr.phase = phData.phase(k);              % Отсчёты фазы
         apr.time = phData.time(k);                % Моменты взятия отсчётов
         
-        ind = find( (phData.cycle_d ~= 16369003) & (~isnan(phData.cycle_d)) );
-        % if (size(ind) > 0)
+        cycle_d = phData.cycle_d(k);
+        
+        a = cumsum(cycle_d-16369003);
+        %        ind = find( (cycle_d ~= 16369003) );
+        dcycle = diff(cycle_d);
+        %        dcycle = circshift(dcycle, 2);
+        ind = find( dcycle ~= 0);
+        %        if (length(ind) > 0)% & (ind < length(k)) & (ind > 0)
+        % if (length(ind) > 0) & (min(ind)>0) & (max(ind)<length(k))% & (ind < length(k)) & (ind > 0)
+            
+        %     apr.time(ind) = apr.time(ind) - dcycle(ind) * 1/fd*100;
         %     ind
-        %     apr.time(ind) = apr.time(ind) + 1/fd;
         % end
+        % ii = 8;
+        % if (length(k) > ii)
+        %     %            apr.phase(ii)   = apr.phase(ii)   + 98.8540;
+        %     % apr.phase(ii+1) = apr.phase(ii+1) - 98.8540;
+        %     ind
+        % end
+        apr.phase = apr.phase - a * 97;% 98.8540;
         
-        apr.p2 = polyfit(apr.time,apr.phase,2);   % Расчёт параметров аппроксимирующего полинома
-        apr.DataFit = polyval(apr.p2,apr.time);   % Расчёт аппроксимации
+        apr.p2 = polyfit(apr.time, apr.phase, 2);  % Расчёт параметров аппроксимирующего полинома
+        apr.DataFit = polyval(apr.p2, apr.time);   % Расчёт аппроксимации
         
-        apr.DataPhase2=(apr.phase-apr.DataFit);   % Разница исходной фазы и аппроксимации
+        apr.DataPhase2=(apr.phase-apr.DataFit);    % Разница исходной фазы и аппроксимации
         
         tmp=0;
         m=0;
@@ -192,6 +207,7 @@ while (1) % обработка данных с заданного КА
     else
         apr.DataPhase2=nan;
         apr.DataFit=nan;
+        apr.phase=nan;
         apr.time=nan;
         apr.aprTime=nan;
         apr.aprDataPhase2=nan;
@@ -201,21 +217,26 @@ while (1) % обработка данных с заданного КА
     %вывод графиков:
     subplot(2,2,1)
     plot(phData.time, phData.cycle_d,'r')
+    grid on
     xlabel('time, sec');
     ylabel('phase, cycles');
     
     subplot(2,2,2)
     plot(phData.time,phData.SNR)
+    grid on
     xlabel('time, sec');
     ylabel('signal to noise, dBHz');
     
     subplot(2,2,3)
     plot(apr.time,apr.DataPhase2,'b')
+    grid on
     xlabel('time, sec');
     ylabel('d phase, cycles');
     
     subplot(2,2,4)
-    plot(phData.time,phData.phase, 'b',apr.time, apr.DataFit,'r')
+    %    plot(phData.time, phData.phase, 'b', apr.time, apr.DataFit,'r')
+    plot(apr.time, apr.phase, 'b', apr.time, apr.DataFit,'r')
+    grid on
     xlabel('time, sec');
     ylabel('d phase, ');
     drawnow
