@@ -29,15 +29,13 @@ function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
     
     %%pream = char(['GEOSr3PS' ncmd]);        % Преамбула с номером команды
     pream = 'GEOSr3PS'; %'GEOSr3PS';  % Преамбула без номера команды
-    pream
     if (~feof(stream))
-        buf = fread(stream, length(pream), 'uint8')';
+        buf = char(fread(stream, length(pream), 'uint8')');
     else
         return;
     end
 
     % Ждём появления пакета
-    cnt = 0;
     while (strcmp(buf, pream) ~= 1)
         if (~feof(stream))
             buf = [buf(2:end) char(fread(stream, 1, 'char'))' ];
@@ -60,11 +58,11 @@ function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
     fprintf('ncmd: 0x%02X, ndat: %d\n', ncmd, ndat);
 
     if (~feof(stream))
-        data = fread(stream, 4*ndat, 'uint8');
+        data = fread(stream, ndat, 'uint32');
     else
         return;
     end
-    if (length(data) ~= 4*ndat)
+    if (length(data) ~= ndat)
         return
     end
     
@@ -74,11 +72,11 @@ function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
         return
     end
 
-    CS0 = getCS(pream, ncmd, ndat, data)
-    CS
+    CS0 = getCS(pream, ncmd, ndat, data);
+    fprintf('CS: %08X %08X\n', uint32(CS), CS0);
     
     
-    fprintf('data1: %d, CS: %08X %02X%02X%02X%02X\n', length(data), CS, CS0);
+    fprintf('data1: %d, CS: %08X %08X\n', length(data), CS, CS0);
     
 % while(1==1)% читаем из порта, пока не найдем нужное сообщение
 %     if(fread(stream,1,'uint8')==preamble_and_ncmd(1,1))%побайтово
@@ -144,17 +142,25 @@ function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
 end
 
 function [CS] = getCS(pream, ncmd, ndat, data)
-    CS = uint8(pream(4:-1:1));           % Little endian
-    CS = bitxor(CS, uint8(pream(8:-1:5)));
-
-    CS(1) = bitxor(uint8(CS(1)), uint8(mod(ndat, 2^8)));
-    CS(2) = bitxor(uint8(CS(2)), uint8(bitshift(uint16(ndat), -8)));
-    CS(3) = bitxor(uint8(CS(3)), uint8(mod(ncmd, 2^8)));
-    CS(4) = bitxor(uint8(CS(4)), uint8(bitshift(uint16(ncmd), -8)));
     
-    for i=1:length(data)/4
-        for j=1:4
-            CS(j) = bitxor(uint8(CS(j)), uint8(data(4*(i-1)+j)));
+    % Little endian !!!
+    CS = uint32( pream(4)*2^24 + pream(3)*2^16 + pream(2)*2^8 + pream(1) );
+    fprintf(' 1: %08X\n', CS);
+    fprintf('  : %08X\n', uint32( pream(8)*2^24 + pream(7)*2^16 + pream(6)*2^8 + pream(5) ));
+    CS = bitxor(CS, uint32( pream(8)*2^24 + pream(7)*2^16 + pream(6)*2^8 + pream(5) ));
+    fprintf(' 2: %08X\n', CS);
+    
+
+    ncmdndat = uint32( mod(ndat, 2^8)*2^16 + floor(ndat/2^8)*2^24 + mod(ncmd, 2^8)*2^0 + floor(ncmd/2^8)*2^8 );
+    fprintf('  : %08X\n', ncmdndat);
+    CS = bitxor(CS, ncmdndat);
+    fprintf(' 3: %08X\n', CS);
+    
+    for i=1:length(data)
+        if (i<3)
+            fprintf(' %d: %08X\n', i+3, uint32(data(i)));
         end
+
+        CS = bitxor(CS, uint32(data(i)));
     end
 end

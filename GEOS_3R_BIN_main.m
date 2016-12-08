@@ -15,6 +15,8 @@ else                             % Работа из файла
     stream = fopen(name_bin_file, 'r');
 end
 
+[Bin.PH_data, phData.datN] = GEOS_3R_BIN_DataRead(16, stream);
+break
 
 % Что обрабатывать
 phData.NumPointPlot=30;          % Максимальное число точек на графике
