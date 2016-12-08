@@ -15,8 +15,6 @@ else                             % Работа из файла
     stream = fopen(name_bin_file, 'r');
 end
 
-[Bin.PH_data, phData.datN] = GEOS_3R_BIN_DataRead(16, stream);
-break
 
 % Что обрабатывать
 phData.NumPointPlot=30;          % Максимальное число точек на графике
@@ -60,7 +58,7 @@ while (1)    % Выбираем КА, с которым дальше будем работать
         % Считывание пакета 16 (0x10) - измерительная информация каналов 
         
         [Bin.PH_data, phData.datN] = GEOS_3R_BIN_DataRead(16, stream);
-
+        
         % Преобразование слова "Количество КА"
         phData.NumKA=GEOS_3R_BIN_bin2num(Bin.PH_data(13:16,1), 'int');
         fprintf('NUM KA: %d  \n', phData.NumKA)
@@ -110,6 +108,7 @@ while (1) % обработка данных с заданного КА
             %    clc
             %    fopen(stream);
             %    for(open_close_port=1:33)
+
     
     % Ожидание пакета 16 (0x10) - Измерительная информация каналов
     [Bin.PH_data, phData.datN]=GEOS_3R_BIN_DataRead(hex2dec('10'), stream);
