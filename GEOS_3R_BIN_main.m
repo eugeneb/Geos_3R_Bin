@@ -34,6 +34,7 @@ phData.phase(1:phData.NumPoint,1) = nan;
 phData.time(1:phData.NumPoint,1) = nan;
 phData.H_liter = nan;
 phData.range(1:phData.NumPoint,1) = nan;
+phData.ADR(1:phData.NumPoint,1) = nan;
 phData.cycle_d(1:phData.NumPoint,1) = nan;
 t_gps(1:phData.NumPoint,1) = nan;
 
@@ -126,6 +127,7 @@ while (1) % обработка данных с заданного КА
     phData.reliable(ind, 1) = phData.reliable(ind+1, 1);
     phData.time(ind, 1)     = phData.time(ind+1, 1);
     phData.range(ind, 1)    = phData.range(ind+1, 1);
+    phData.ADR(ind, 1)      = phData.ADR(ind+1, 1);
     phData.cycle_d(ind, 1)  = phData.cycle_d(ind+1, 1);
     
     
@@ -138,7 +140,8 @@ while (1) % обработка данных с заданного КА
       phData.phase(n),          ...   % Фаза
       phData.Doppler,           ...   % Смещение частоты
       phData.H_liter,           ...   % ?
-      phData.range(n)       ] = ...   % Псевдодальность
+      phData.range(n),          ...   % Псевдодальность
+      phData.ADR(n)         ] = ...   % Интегральный доплер
         GEOS_3R_BIN_KA_data_0x10( pack0x10,  ind_KA);
 
     
@@ -175,6 +178,8 @@ while (1) % обработка данных с заданного КА
         cycle_d = phData.cycle_d(k);              % Количество отсчётов за прошедший измерительный интервал
         
         apr.phase = apr.phase - cumsum( (cycle_d-16369003) )*98.8540;
+        ind = k(1);
+        %        apr.phase = phData.range(k)-phData.range(ind) - (phData.phase(k)-phData.phase(ind))./(F0_gps+phData.Doppler/c*F0_gps)*c;
         
         % a = cumsum(cycle_d-16369003);
         % %        ind = find( (cycle_d ~= 16369003) );
@@ -251,15 +256,22 @@ while (1) % обработка данных с заданного КА
     
     ind = min(find(~isnan(phData.range)));
     figure(2);
-    %    subplot(2, 1, 1);
+    % hold off
+    % plot(phData.time, phData.range-phData.range(ind), 'b');
+    % grid on
+    
+    % hold on
+    % plot(phData.time, (phData.phase-phData.phase(ind))./(F0_gps+phData.Doppler/c*F0_gps)*c, 'r');
+    % grid on
+
     hold off
-    plot(phData.time, phData.range-phData.range(ind), 'b');
+    plot(phData.time, phData.range-phData.range(ind) - (phData.phase-phData.phase(ind))./(F0_gps+phData.Doppler/c*F0_gps)*c, 'r');
     grid on
     hold on
     
-    %    subplot(2, 1, 1);
-    plot(phData.time, (phData.phase-phData.phase(ind))./(F0_gps+phData.Doppler/c*F0_gps)*c, 'r');
+    plot(phData.time, (phData.ADR-phData.ADR(ind))*F0_gps/c*2, 'k');
     grid on
+
     hold off
 end
 
