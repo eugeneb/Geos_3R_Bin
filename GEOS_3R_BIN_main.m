@@ -17,7 +17,7 @@ end
 
 
 % Что обрабатывать
-phData.NumPoint = 30;          % Максимальное число точек на графике
+phData.NumPoint = 1000;          % Максимальное число точек на графике
 phData.NumPointPoiskKA=5;        % Число точек для поиска нужного КА
 phData.SatMax = 96;       % Число спутников 
 
@@ -33,6 +33,7 @@ phData.SNR(1:phData.NumPointPoiskKA,1:phData.SatMax) = nan;
 phData.phase(1:phData.NumPoint,1) = nan;
 phData.time(1:phData.NumPoint,1) = nan;
 phData.H_liter = nan;
+phData.range(1:phData.NumPoint,1) = nan;
 phData.cycle_d(1:phData.NumPoint,1) = nan;
 t_gps(1:phData.NumPoint,1) = nan;
 
@@ -124,6 +125,7 @@ while (1) % обработка данных с заданного КА
     phData.SNR(ind, 1)      = phData.SNR(ind+1, 1);
     phData.reliable(ind, 1) = phData.reliable(ind+1, 1);
     phData.time(ind, 1)     = phData.time(ind+1, 1);
+    phData.range(ind, 1)    = phData.range(ind+1, 1);
     phData.cycle_d(ind, 1)  = phData.cycle_d(ind+1, 1);
     
     
@@ -135,7 +137,8 @@ while (1) % обработка данных с заданного КА
       phData.SNR(n),            ...   % Отношение сигнал/шум
       phData.phase(n),          ...   % Фаза
       phData.Doppler,           ...   % Смещение частоты
-      phData.H_liter        ] = ...   % ?
+      phData.H_liter,           ...   % ?
+      phData.range(n)       ] = ...   % Псевдодальность
         GEOS_3R_BIN_KA_data_0x10( pack0x10,  ind_KA);
 
     
@@ -169,27 +172,29 @@ while (1) % обработка данных с заданного КА
         apr.phase = phData.phase(k);              % Отсчёты фазы
         apr.time = phData.time(k);                % Моменты взятия отсчётов
         
-        cycle_d = phData.cycle_d(k);
+        cycle_d = phData.cycle_d(k);              % Количество отсчётов за прошедший измерительный интервал
         
-        a = cumsum(cycle_d-16369003);
-        %        ind = find( (cycle_d ~= 16369003) );
-        dcycle = diff(cycle_d);
-        %        dcycle = circshift(dcycle, 2);
-        ind = find( dcycle ~= 0);
-        %        if (length(ind) > 0)% & (ind < length(k)) & (ind > 0)
-        % if (length(ind) > 0) & (min(ind)>0) & (max(ind)<length(k))% & (ind < length(k)) & (ind > 0)
+        apr.phase = apr.phase - cumsum( (cycle_d-16369003) )*98.8540;
+        
+        % a = cumsum(cycle_d-16369003);
+        % %        ind = find( (cycle_d ~= 16369003) );
+        % dcycle = diff(cycle_d);
+        % %        dcycle = circshift(dcycle, 2);
+        % ind = find( dcycle ~= 0);
+        % %        if (length(ind) > 0)% & (ind < length(k)) & (ind > 0)
+        % % if (length(ind) > 0) & (min(ind)>0) & (max(ind)<length(k))% & (ind < length(k)) & (ind > 0)
             
-        %     apr.time(ind) = apr.time(ind) - dcycle(ind) * 1/fd*100;
-        %     ind
-        % end
-        % ii = 8;
-        % if (length(k) > ii)
-        %     %            apr.phase(ii)   = apr.phase(ii)   + 98.8540;
-        %     % apr.phase(ii+1) = apr.phase(ii+1) - 98.8540;
-        %     ind
-        % end
-        apr.phase = apr.phase - a * 97;% 98.8540;
-        
+        % %     apr.time(ind) = apr.time(ind) - dcycle(ind) * 1/fd*100;
+        % %     ind
+        % % end
+        % % ii = 8;
+        % % if (length(k) > ii)
+        % %     %            apr.phase(ii)   = apr.phase(ii)   + 98.8540;
+        % %     % apr.phase(ii+1) = apr.phase(ii+1) - 98.8540;
+        % %     ind
+        % % end
+        % % apr.phase = apr.phase - a * 97;% 98.8540;
+
         apr.p2 = polyfit(apr.time, apr.phase, 2);  % Расчёт параметров аппроксимирующего полинома
         apr.DataFit = polyval(apr.p2, apr.time);   % Расчёт аппроксимации
         
@@ -215,6 +220,8 @@ while (1) % обработка данных с заданного КА
     end       
     
     %вывод графиков:
+    figure(1);
+    
     subplot(2,2,1)
     plot(phData.time, phData.cycle_d,'r')
     grid on
@@ -222,7 +229,7 @@ while (1) % обработка данных с заданного КА
     ylabel('phase, cycles');
     
     subplot(2,2,2)
-    plot(phData.time,phData.SNR)
+    plot(phData.time, phData.SNR)
     grid on
     xlabel('time, sec');
     ylabel('signal to noise, dBHz');
@@ -241,6 +248,19 @@ while (1) % обработка данных с заданного КА
     ylabel('d phase, ');
     drawnow
     %    end
+    
+    ind = min(find(~isnan(phData.range)));
+    figure(2);
+    %    subplot(2, 1, 1);
+    hold off
+    plot(phData.time, phData.range-phData.range(ind), 'b');
+    grid on
+    hold on
+    
+    %    subplot(2, 1, 1);
+    plot(phData.time, (phData.phase-phData.phase(ind))./(F0_gps+phData.Doppler/c*F0_gps)*c, 'r');
+    grid on
+    hold off
 end
 
 
