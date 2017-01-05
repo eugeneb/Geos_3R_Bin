@@ -1,13 +1,14 @@
 function [ res ] = Geos3_decode_packet(data)
     
 % Описание структуры пакета 0x10
-    pack0x10 = { 'tGEOS',      'double',       (1-1)*4;
+    Geos3PS = {'pack0x10'
+               { 'tGEOS',      'double',       (1-1)*4;
                  'MeasCycles', 'int32',        (3-1)*4;
                  'NSat',       'int32',        (4-1)*4;
                  'SatMeas',    'struct[NSat]', (5-1)*4;
                };
-
-    SatMeas =  { 'Flags',      'uint8',     1-1;
+               'SatMeas'
+               { 'Flags',      'uint8',     1-1;
                  'Lit',        'int8',      2-1;
                  'satID',      'uint8',     3-1;
                  'NChnl',      'uint8',     4-1;
@@ -21,7 +22,7 @@ function [ res ] = Geos3_decode_packet(data)
                  'stdPV',      'float',  (12-1)*4;
                  'errPR',      'float',  (13-1)*4;
                  'errPV',      'float',  (14-1)*4;
-                 };
+                 }};
     
     Types = {'double', 8;
              'float',  4;
@@ -33,14 +34,21 @@ function [ res ] = Geos3_decode_packet(data)
              'uint32', 4
              };
     
-    pack = pack0x10;
+    cmd = hex2dec('10');
+    pack = [];
+    for i=1:2:size(Geos3PS, 1)
+        sprintf('pack0x%02X', cmd)
+        if strcmp(sprintf('pack0x%02X', cmd), Geos3PS{i, 1})
+            pack = Geos3PS{i+1, 1};
+        end
+    end
     
     global res
     res = [];
 
     for i=1:size(pack, 1)
-        field = pack{i, 1};
-        type  = pack{i, 2};
+        field = char(pack{i, 1});
+        type  = char(pack{i, 2});
         pos   = pack{i, 3};
 
         if (isempty(regexp(type, 'struct')))
@@ -63,9 +71,17 @@ function [ res ] = Geos3_decode_packet(data)
                     fprintf('Unknown field: %s\n', type);
                     break;
                 end
+                
+                Strt = [];
+                for k=1:2:size(Geos3PS, 1)
+                    if strcmp(field, Geos3PS{k, 1})
+                        Strt = Geos3PS{k+1, 1};
+                    end
+                end
+
                 StructSize = 0;
-                for fl=1:size(SatMeas, 1)
-                    tp  = SatMeas{fl, 2};
+                for fl=1:size(Strt, 1)
+                    tp  = Strt{fl, 2};
                     for tt=1:size(Types, 1)
                         if strcmp(tp, Types{tt, 1})
                             StructSize = StructSize + Types{tt, 2};
@@ -74,11 +90,11 @@ function [ res ] = Geos3_decode_packet(data)
                 end
 
                 for j=1:res.(t)
-                    fprintf('SatMeas %d\n', j);
-                    for fl=1:size(SatMeas, 1)
-                        fld = SatMeas{fl, 1};
-                        tp  = SatMeas{fl, 2};
-                        ps  = (j-1)*StructSize + SatMeas{fl, 3};
+                    fprintf('Strt %d\n', j);
+                    for fl=1:size(Strt, 1)
+                        fld = Strt{fl, 1};
+                        tp  = Strt{fl, 2};
+                        ps  = (j-1)*StructSize + Strt{fl, 3};
                         fprintf('   posit: %d ', pos+1+ps);
                         for tt=1:size(Types, 1)
                             if strcmp(tp, Types{tt, 1})
