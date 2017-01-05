@@ -34,9 +34,12 @@ IN=str2num(dec2bin(data)); % в "бинарный" код
  for(k=1:4)
     data(N+k)=cs(k);
  end
- fopen(COM_port);
- fwrite(COM_port,data);
- fclose(COM_port);
+ 
+ COM_port
+ 
+ % fopen(COM_port);
+ fwrite(COM_port, data);
+ % fclose(COM_port);
 
 end
 

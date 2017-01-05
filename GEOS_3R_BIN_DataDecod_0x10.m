@@ -1,4 +1,4 @@
-function [ KAnumber, reliability, SignalToNoise, phase, Doppler] = GEOS_3R_BIN_DataDecod_0x10( IN )
+function [ KAnumber, reliability, SignalToNoise, phase, Doppler, type] = GEOS_3R_BIN_DataDecod_0x10( IN )
 %обрабатывается сообщение одного спутника
 % KAnumber - номер КА
 % GLONASSlitte - литера ГЛОНАСС (для GPS=0)

@@ -16,7 +16,7 @@ function [ncmd, ndat, data] = GEOS_GetPacket(stream)
     
     %%pream = char(['GEOSr3PS' ncmd]);        % Преамбула с номером команды
     pream = 'GEOSr3PS'; %'GEOSr3PS';  % Преамбула без номера команды
-    if (~feof(stream))
+    if ((~isreal(stream)) || (~feof(stream)))
         buf = char(fread(stream, length(pream), 'uint8')');
     else
         return;
@@ -28,23 +28,35 @@ function [ncmd, ndat, data] = GEOS_GetPacket(stream)
     while (CS ~= CS0)  % Читаем пакеты до тех пор, пока не совпадёт контрольная сумма
         
         % Ждём появления пакета
-        while (strcmp(buf, pream) ~= 1)
-            if (~feof(stream))
+        if isreal(stream)  % Чтение из файла
+            while (strcmp(buf, pream) ~= 1)
+                if (~feof(stream))
+                    buf = [buf(2:end) char(fread(stream, 1, 'char'))' ];
+                else
+                    return;
+                end
+            end
+        else
+            %            while (strcmp(buf, pream) ~= 1)
+            for i=1:100
                 buf = [buf(2:end) char(fread(stream, 1, 'char'))' ];
-            else
-                return;
+                fprintf('%02X', buf); fprintf('\n');
+                strcmp(buf, pream)
+                if (strcmp(buf, pream) == 1)
+                    break
+                end
             end
         end
-        
+        fprintf('New packet\n');
         % Номер пакета
-        if (~feof(stream))
+        if ((~isreal(stream)) || (~feof(stream)))
             ncmd = fread(stream, 1, 'uint16');
         else
             return;
         end
 
         % Длина пакета
-        if (~feof(stream))
+        if ((~isreal(stream)) || (~feof(stream)))
             ndat = fread(stream, 1, 'uint16');
         else
             return;
@@ -52,17 +64,21 @@ function [ncmd, ndat, data] = GEOS_GetPacket(stream)
 
         % Чтение данных
         % Протокол Geos3 ориентирован на 32-битные слова
-        if (~feof(stream))
-            data = fread(stream, ndat, 'uint32');
+        if (isreal(stream))
+            data = fread(stream, ndat, 'uint32');  % Чтение из файла
         else
-            return;
+            data = [];
+            while length(data < ndat)
+                data = [data fread(stream, 1, 'uint32')];
+                length(data)
+            end
         end
         if (length(data) ~= ndat)
             return
         end
         
         % Чтение контрольной суммы
-        if (~feof(stream))
+        if ((~isreal(stream)) || (~feof(stream)))
             CS = fread(stream, 1, 'uint32');
         else
             return

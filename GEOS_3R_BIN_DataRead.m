@@ -12,7 +12,7 @@ function [ data, datN ] = GEOS_3R_BIN_DataRead(ncmd, stream)
     data = [];
     datN = 0;
     
-    while (~feof(stream))
+    while ((~isreal(stream)) || (~feof(stream)))
         [cmd, ndat, dat] = Geos3_GetPacket(stream);
         
         if ((cmd == ncmd) && (length(dat) == ndat))

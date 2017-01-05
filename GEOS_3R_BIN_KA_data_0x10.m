@@ -1,4 +1,4 @@
-function [ UTC,cycle_d, kol_vo_KA, SignalToNoise, phase, Doppler, H_liter, Range, ADR] = GEOS_3R_BIN_KA_data_0x10( data,  KAnumber)
+function [ UTC,cycle_d, kol_vo_KA, SignalToNoise, phase, Doppler, H_liter, Range, ADR, type] = GEOS_3R_BIN_KA_data_0x10( data,  KAnumber)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 UTC = GEOS_3R_BIN_bin2num(data(1:8),'double');
@@ -20,13 +20,15 @@ if(ind>0)
     Range         = GEOS_3R_BIN_bin2num(data(4*(-7+14*ind)-3 : 4*(-6+14*ind)),'double');
     ADR           = GEOS_3R_BIN_bin2num(data(4*(-3+14*ind)-3 : 4*(-2+14*ind)),'double');
     H_liter       = mod(data(4*(-9+14*ind)-2),2^7)*(-1)^(fix(data(4*(-9+14*ind)-2)/2^7));
+    type          = GEOS_3R_BIN_bin2num(data(4*(-9+4+14*ind) + (-3:0)) , 'int') ;
 else
     SignalToNoise = nan;
     phase         = nan;
     Doppler       = nan;
-    Range         = nan
-    ADR           = nan
+    Range         = nan;
+    ADR           = nan;
     H_liter       = nan;
+    type = nan;
 end
 end
 

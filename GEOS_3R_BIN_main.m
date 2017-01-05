@@ -1,3 +1,8 @@
+try
+    fclose(stream);
+catch
+end
+
 clear
 clc
 
@@ -7,9 +12,12 @@ clc
 fead_data_from='file';
 
 if (fead_data_from=='GEOS')      % Настройки из порта
-    Num_com_port = 'COM67';   
+    %%    Num_com_port = 'COM67';   
+    Num_com_port = '/dev/ttyUSB0';
     baud = 115200;
     stream = serial(Num_com_port, 'BaudRate', baud);
+    fopen(stream); 
+    system('stty -F /dev/ttyUSB0 115200 raw');
 else                             % Работа из файла
     name_bin_file = 'bin_data_file/geos_3MR_F_1_Hz.bin';
     stream = fopen(name_bin_file, 'r');
@@ -34,11 +42,12 @@ phData.phase(1:phData.NumPoint,1) = nan;
 phData.time(1:phData.NumPoint,1) = nan;
 phData.H_liter = nan;
 phData.range(1:phData.NumPoint,1) = nan;
+phData.Doppler(1:phData.NumPoint,1) = nan;
 phData.ADR(1:phData.NumPoint,1) = nan;
 phData.cycle_d(1:phData.NumPoint,1) = nan;
 t_gps(1:phData.NumPoint,1) = nan;
 
-if(fead_data_from=='GEOS')       % Для прм GEOS-3R
+if (fead_data_from=='GEOS')       % Для прм GEOS-3R
                                  % Настройки бинарного протокола приемника
                                  % Выдача сообщений 0х10 и 0x13
 
@@ -50,7 +59,6 @@ if(fead_data_from=='GEOS')       % Для прм GEOS-3R
     Bin.data_write(1:8,1)=[hex2dec('44'); 0; 1; 0; 3; 0; 0; 0];
     GEOS_3R_BIN_DataWrite(Bin.data_write, stream);
     
-    fopen(stream);
 end
 
 StartTime=-1; % время начала работы
@@ -93,17 +101,18 @@ while (1)    % Выбираем КА, с которым дальше будем работать
         fprintf('\n Failed: max SNR = %5.1f dBHz\n', snr)
     end
 end
-fclose(stream);  % Поиск подходящего КА завершён
+% fclose(stream);  % Поиск подходящего КА завершён
 
 % Выделение памяти для данных
 phData.SNR = nan;
 phData.SNR(1:phData.NumPoint, 1) = nan;
 
-if (fead_data_from=='GEOS')
-    fopen(stream);
-else
-    stream=fopen(name_bin_file);
-end
+% if (fead_data_from=='GEOS')
+%     fopen(stream);
+% else
+%     stream=fopen(name_bin_file);
+% end
+
 
 while (1) % обработка данных с заданного КА
     
@@ -127,6 +136,7 @@ while (1) % обработка данных с заданного КА
     phData.reliable(ind, 1) = phData.reliable(ind+1, 1);
     phData.time(ind, 1)     = phData.time(ind+1, 1);
     phData.range(ind, 1)    = phData.range(ind+1, 1);
+    phData.Doppler(ind, 1)  = phData.Doppler(ind+1, 1);
     phData.ADR(ind, 1)      = phData.ADR(ind+1, 1);
     phData.cycle_d(ind, 1)  = phData.cycle_d(ind+1, 1);
     
@@ -138,10 +148,11 @@ while (1) % обработка данных с заданного КА
       phData.kol_vo_KA,         ...   % Количество КА в пакете 0x10
       phData.SNR(n),            ...   % Отношение сигнал/шум
       phData.phase(n),          ...   % Фаза
-      phData.Doppler,           ...   % Смещение частоты
+      phData.Doppler(n),           ...   % Смещение частоты
       phData.H_liter,           ...   % ?
       phData.range(n),          ...   % Псевдодальность
-      phData.ADR(n)         ] = ...   % Интегральный доплер
+      phData.ADR(n),            ...
+      typee         ] = ...   % Интегральный доплер
         GEOS_3R_BIN_KA_data_0x10( pack0x10,  ind_KA);
 
     
@@ -164,7 +175,7 @@ while (1) % обработка данных с заданного КА
     fprintf('\n UTC (01.01.2008): %9.0f sec', phData.UTC);
     fprintf('\n number KA: %d', phData.kol_vo_KA);
     
-    t_gps(1,1) = GEOS_3R_BIN_navi_task_0x13(pack0x13);  % Выделение текущего времени из пакета 0x13
+    [t_gps(1,1) drift] = GEOS_3R_BIN_navi_task_0x13(pack0x13);  % Выделение текущего времени из пакета 0x13
 
     
     % Обработка данных:
@@ -240,7 +251,7 @@ while (1) % обработка данных с заданного КА
     ylabel('signal to noise, dBHz');
     
     subplot(2,2,3)
-    plot(apr.time,apr.DataPhase2,'b')
+    plot(apr.time, apr.DataPhase2,'b')
     grid on
     xlabel('time, sec');
     ylabel('d phase, cycles');
@@ -265,7 +276,7 @@ while (1) % обработка данных с заданного КА
     % grid on
 
     hold off
-    plot(phData.time, phData.range-phData.range(ind) - (phData.phase-phData.phase(ind))./(F0_gps+phData.Doppler/c*F0_gps)*c, 'r');
+    plot(phData.time, phData.range-phData.range(ind) - (phData.phase-phData.phase(ind))./(F0_gps+phData.Doppler(ind)/c*F0_gps)*c, 'r');
     grid on
     hold on
     
@@ -275,10 +286,23 @@ while (1) % обработка данных с заданного КА
     hold off
 end
 
+ind = min(find(~isnan(phData.range)));
+t = phData.time(ind:end)';
+r = phData.range(ind:end)';
+v = phData.Doppler(ind:end)';
+p = phData.phase(ind:end)'/(F0_gln + dF_gln*10)*c;%  * (1 + drift*5*150/4.092e6*2 );
+%p = phData.phase(ind:end)'/(F0_gps)*c  .* (1 + (drift)/c*F0_gps /4.092e6*F0_gps /4.092e6 );
+% r = phData.range(ind:end)'; ph = phData.phase(ind:end)'./(F0_gps+phData.Doppler(end:end)/c*F0_gps)*c;
+% figure; plot([r - ( ph-ph(1)+r(1))])
+% grid on
 
 
+figure(3);
+plot(t(1:end-1), diff(r)./diff(t), 'b')
+hold on
+grid on
 
+plot(t, -v-drift, 'r')
 
-
-
+plot(t(1:end-1), diff(p)./diff(t), 'k')
 
