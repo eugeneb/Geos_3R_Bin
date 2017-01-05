@@ -63,6 +63,15 @@ end
 
 StartTime=-1; % время начала работы
 
+while (1)
+    [pack0x10, phData.datN] = GEOS_3R_BIN_DataRead(16, stream);
+    
+    [ rc ] = Geos3_decode_packet( pack0x10 );
+
+    break
+end
+break
+
 while (1)    % Выбираем КА, с которым дальше будем работать
     for ch=1:phData.NumPointPoiskKA
         % Считывание пакета 16 (0x10) - измерительная информация каналов 

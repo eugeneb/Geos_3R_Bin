@@ -11,7 +11,7 @@ function [ OUT ] = GEOS_3R_BIN_bin2num( IN, format )
 % Биты поступают от младшего к старшему
     
     Input=IN;
-    IN=str2num(dec2bin(IN)); % получили число в двоичном представление
+    IN=str2num(dec2bin(IN)); % получили число в двоичном представлении
     if(length(format)==length('double'))
         while(format=='double')
             Mant=0;
@@ -30,8 +30,8 @@ function [ OUT ] = GEOS_3R_BIN_bin2num( IN, format )
         end
     end
     
-    if(length(format)==length('int'))
-        while(format=='int')
+    if(length(format)==length('int32'))
+        while(format=='int32')
             A(1:32)=0;
             for(k=1:4) % раскладываем число по битам
                 for(m=1:8)
